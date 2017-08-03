@@ -1,5 +1,5 @@
 ---
-- name: Do something on CloudForms with Ansible-Inside
+- name: Do something on CloudForms with Ansible
   hosts: localhost
   connection: local
 
