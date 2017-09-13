@@ -1,0 +1,86 @@
+---
+- name: Do something on CloudForms with Ansible
+  hosts: localhost
+  connection: local
+
+  vars:
+    api_uri: "https://192.168.42.136/api"
+    template_name: "RHEL-7.4_HVM_Beta-20170518-x86_64-1-Hourly2-GP2"
+    flavour_name: "t2.small"
+
+  tasks:
+    - debug: var=api_uri
+    - debug: var=template_name
+
+    - name: Get CloudForms auth_token
+      uri:
+        url: "{{ api_uri }}/auth"
+        method: GET
+        validate_certs: no
+        user: admin
+        password: smartvm
+        headers:
+          accept: "application/json"
+        return_content: yes
+      register: token_output
+
+    - set_fact: auth_token="{{ token_output.json.auth_token }}"
+    - debug: var=auth_token
+
+    # - name: Get template GUID
+    #   uri:
+    #     url: "{{ api_uri }}/templates?expand=resources&attributes=guid&filter[]=name='{{ template_name }}'"
+    #     method: GET
+    #     validate_certs: no
+    #     headers:
+    #       x-auth-token: "{{ auth_token }}"
+    #       accept: "application/json"
+    #     return_content: yes
+    #   register: token_output
+
+    # - set_fact: template_guid="{{ token_output.json.resources[0].guid }}"
+    # - debug: var=template_guid
+
+    - name: Get flavour
+      uri:
+        url: "{{ api_uri }}/flavors?expand=resources&attributes=ems_id&filter[]=name={{ flavour_name }}"
+        method: GET
+        validate_certs: no
+        headers:
+          x-auth-token: "{{ auth_token }}"
+          accept: "application/json"
+        return_content: yes
+      register: token_output
+
+    - set_fact: flavour_id="{{ token_output.json.resources[0].id }}"
+    - debug: var=flavour_id
+
+    - name: Provision request
+      uri:
+        url: "{{ api_uri }}/provision_requests"
+        method: POST
+        validate_certs: no
+        headers:
+          x-auth-token: "{{ auth_token }}"
+          accept: "application/json"
+        body_format: json
+        body:
+          template_fields:
+            # guid: "{{ template_guid }}"
+            name: "{{ template_name }}"
+            request_type: 'template'
+          vm_fields:
+            vm_name: changeme
+            instance_type: "{{ flavour_id }}"
+            placement_auto: true
+          requester:
+            user_name: admin
+            owner_first_name: first
+            owner_last_name: last
+            owner_email: first@last.com
+            auto_approve: true
+        return_content: yes
+      register: token_output
+
+    - debug: var=token_output.json.results[0].description
+    - debug: var=token_output.json.results[0].message
