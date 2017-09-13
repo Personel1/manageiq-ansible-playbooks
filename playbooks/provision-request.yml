@@ -41,9 +41,9 @@
     # - set_fact: template_guid="{{ token_output.json.resources[0].guid }}"
     # - debug: var=template_guid
 
-    - name: Get flavour
+    - name: Get flavour id
       uri:
-        url: "{{ api_uri }}/flavors?expand=resources&attributes=ems_id&filter[]=name={{ flavour_name }}"
+        url: "{{ api_uri }}/flavors?expand=resources&attributes=id&filter[]=name={{ flavour_name }}"
         method: GET
         validate_certs: no
         headers:
